@@ -1,5 +1,4 @@
-import getRpcClient from "../client";
-import { Server } from "../server";
+import { Server, getRpcClient } from "..";
 import { Service } from "./service";
 
 class ServiceImpl implements Service {

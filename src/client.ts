@@ -72,4 +72,4 @@ const getRpcClient = <T>(server: Server<T> | string): Promisify<T> & Client => {
     }) as Promisify<T> & Client;
 }
 
-export default getRpcClient;
+export { getRpcClient };
