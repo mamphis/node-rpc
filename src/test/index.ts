@@ -18,18 +18,17 @@ class ServiceImpl implements Service {
 }
 
 const server = new Server(new ServiceImpl());
-
-const client = getRpcClient<Service>(server);
-
+server.listen(3000);
+const client = getRpcClient<Service>('http://localhost:3000');
 
 async function start() {
     const date = await client.getCurrentDate();
     console.log(date);
 
-    const upper =  client.toUpper("hello");
+    const upper = await client.toUpper("hello");
     console.log(upper);
 
-    const foo =  client.multiply(2, 3);
+    const foo = await client.multiply(2, 3);
     console.log(foo);
 
     const a = await client.sleep(1000);

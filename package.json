@@ -10,6 +10,7 @@
   "author": "mamphis <“mattis.wacker@pcsmw.de”>",
   "license": "ISC",
   "devDependencies": {
+    "@types/express": "^4.17.13",
     "@types/node": "^18.0.0"
   }
 }
