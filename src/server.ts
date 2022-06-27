@@ -1,5 +1,15 @@
-import { Application } from 'express';
+import { Application, RequestHandler } from 'express';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
+
+type HttpRequestHandler = (req: IncomingMessage, res: ServerResponse, next: (value?: any) => void) => void;
+
+type HttpOptions = {
+    middleware: HttpRequestHandler[];
+}
+
+type ExpressOptions = {
+    middleware: RequestHandler[];
+};
 
 export class Server<T> {
     constructor(private implementation: T) {
@@ -51,16 +61,32 @@ export class Server<T> {
         });
     }
 
-    listen(port: number) {
+    listen(port: number, options?: Partial<HttpOptions>) {
+        const middleware = options?.middleware ?? [];
         const server = createServer((req, res) => {
-            this.requestHandler(req, res);
+            const requestMiddleware = [...middleware, this.requestHandler.bind(this)];
+            const handle = (handler: HttpRequestHandler) => {
+                handler(req, res, (value) => {
+                    if (value) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.statusCode = 500;
+                        res.end(JSON.stringify({ error: value }));
+                    } else if (requestMiddleware.length > 0) {
+                        handle(requestMiddleware.shift()!);
+                    }
+                });
+            };
+
+            handle(requestMiddleware.shift()!);
         });
 
         server.listen(port);
     }
 
-    mount(path: string, server: Application) {
-        server.use(path, (req, res) => {
+    mount(path: string, server: Application, options?: Partial<ExpressOptions>) {
+        const middleware = options?.middleware ?? [];
+
+        server.use(path, ...middleware, (req, res) => {
             this.requestHandler(req, res);
         });
     }
