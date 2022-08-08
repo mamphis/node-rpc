@@ -1,5 +1,6 @@
 import { Application, RequestHandler } from 'express';
-import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { createServer, IncomingMessage, ServerResponse, Server as HttpServer } from 'http';
+import { deserialize, serialize } from './transformer';
 
 type HttpRequestHandler = (req: IncomingMessage, res: ServerResponse, next: (value?: any) => void) => void;
 
@@ -12,6 +13,8 @@ type ExpressOptions = {
 };
 
 export class Server<T> {
+    private server: HttpServer | undefined;
+
     constructor(private implementation: T) {
 
     }
@@ -20,10 +23,12 @@ export class Server<T> {
         const property = this.implementation[method];
 
         if (typeof property === "function") {
-            return await property.apply(this.implementation, params);
+            const realParams = deserialize(params);
+            const result = await property.apply(this.implementation, realParams);
+            return serialize([result]);
         }
 
-        return await this.implementation[method];
+        return serialize([await this.implementation[method]]);
     }
 
     private requestHandler(req: IncomingMessage, res: ServerResponse) {
@@ -61,9 +66,13 @@ export class Server<T> {
         });
     }
 
+    close() {
+        this.server?.close();
+    }
+
     listen(port: number, options?: Partial<HttpOptions>) {
         const middleware = options?.middleware ?? [];
-        const server = createServer((req, res) => {
+        this.server = createServer((req, res) => {
             const requestMiddleware = [...middleware, this.requestHandler.bind(this)];
             const handle = (handler: HttpRequestHandler) => {
                 handler(req, res, (value) => {
@@ -80,13 +89,13 @@ export class Server<T> {
             handle(requestMiddleware.shift()!);
         });
 
-        server.listen(port);
+        this.server.listen(port);
     }
 
-    mount(path: string, server: Application, options?: Partial<ExpressOptions>) {
+    mount(path: string, app: Application, options?: Partial<ExpressOptions>) {
         const middleware = options?.middleware ?? [];
 
-        server.use(path, ...middleware, (req, res) => {
+        app.use(path, ...middleware, (req, res) => {
             this.requestHandler(req, res);
         });
     }

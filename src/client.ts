@@ -1,4 +1,5 @@
 import { Server } from "./server";
+import { deserialize, serialize } from "./transformer";
 
 interface Client {
     setHeader(name: string, value: string): void;
@@ -24,8 +25,12 @@ class RpcClient<T> implements Client {
     }
 
     async call(method: keyof T, ...params: any[]) {
+        const serializedParams = serialize(params);
+
         if (this.server) {
-            return await this.server.call(method, ...params);
+
+
+            return deserialize(await this.server.call(method, ...serializedParams))[0];
         }
 
         const response = await fetch(this.serverUrl!, {
@@ -34,7 +39,7 @@ class RpcClient<T> implements Client {
                 "Content-Type": "application/json",
                 ...this.headers,
             },
-            body: JSON.stringify({ method, params }),
+            body: JSON.stringify({ method, params: serializedParams }),
         });
 
         const responseBody = await response.json();
@@ -46,7 +51,7 @@ class RpcClient<T> implements Client {
             throw new Error(`${response.status} ${response.statusText}`);
         }
 
-        return responseBody.result;
+        return deserialize(responseBody.result)[0];
     }
 }
 
@@ -65,7 +70,7 @@ const getRpcClient = <T>(server: Server<T> | string): Promisify<T> & Client => {
 
             return async (...args: any[]) => {
                 const result = await client?.call(propKey as keyof T, ...args);
-                
+
                 return result;
             };
         }

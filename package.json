@@ -1,5 +1,5 @@
 {
-  "name": "rpc",
+  "name": "node-rpc",
   "version": "1.0.0",
   "description": "",
   "main": "out/test/index.js",
@@ -9,6 +9,9 @@
   "keywords": [],
   "author": "mamphis <“mattis.wacker@pcsmw.de”>",
   "license": "ISC",
+  "engines": {
+    "node": ">=17.5.0"
+  },
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/node": "^18.0.0"
