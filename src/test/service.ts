@@ -7,4 +7,5 @@ export interface Service {
     sleep(ms: number): Promise<{start: number, end: number}>
     createArchive(name: string): Archive;
     createArchives(name: string): [Archive, Archive, Archive];
+    addDocument(archive: Archive, document: string): Archive;
 }

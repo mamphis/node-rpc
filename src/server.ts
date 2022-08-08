@@ -58,7 +58,8 @@ export class Server<T> {
             try {
                 const result = await this.call(method, ...params);
                 res.statusCode = 200;
-                res.end(JSON.stringify({ result }));
+                const resultText = JSON.stringify({ result });
+                res.end(resultText);
             } catch (error: any) {
                 res.statusCode = 500;
                 return res.end(JSON.stringify({ error: error.message }));
